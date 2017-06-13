@@ -283,5 +283,9 @@ ALTER SYSTEM SET UNDO_MANAGEMENT=AUTO  SCOPE=SPFILE;
 ALTER SYSTEM RESET \"_OFFLINE_ROLLBACK_SEGMENTS\" SCOPE=SPFILE SID='*';
 ALTER SYSTEM RESET \"_CORRUPTED_ROLLBACK_SEGMENTS\" SCOPE=SPFILE SID='*';
 "
+},
+{
+"title":"数据泵中NETWORK_LINK选项的作用是什么",
+"sql":"数据泵expdp生成的文件默认是存放在服务端的，而exp生成的文件是存放在客户端的。使用数据泵的NETWORK_LINK参数，可以在本地的数据库中创建一个指向远程数据库的DBLINK，在执行导出expdp时，指定NETWORK_LINK参数为DBLINK名称，就可以直接将远程数据库的数据导出到本地数据库里创建的DIRECTORY下。在执行导入命令impdp的时候也可以使用NETWORK_LINK参数。如果不想在源端或目标端生成dmp文件而直接将需要的数据导入目标端数据库，那么可以直接使用impdp带NETWORK_LINK参数，这样可以直接执行impdp从而绕过了expdp的步骤。"
 }
 ]}]
