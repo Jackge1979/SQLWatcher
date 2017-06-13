@@ -355,5 +355,37 @@ With the Partitioning, Real Application Clusters, Automatic Storage Management, 
 Data Mining and Real Application Testing options
 SQL> 
 "
+},
+{
+"title":"如何查询数据库系统或当前会话的REDO和UNDO的生成量",
+"sql","反映UNDO、REDO生成量的统计指标分别是：
+REDO：redo size
+UNDO：undo change vector size
+1、查询数据库系统REDO生成量，可以通过V$SYSSTAT视图查询，如下所示：
+SELECT NAME,
+       VALUE
+FROM   V$SYSSTAT
+WHERE  NAME = 'redo size';
+ 
+2、查看当前会话的REDO生成量，可以通过V$MYSTAT或V$SESSTAT视图查询，如下所示：
+CREATE OR REPLACE VIEW REDO_SIZE AS
+SELECT VALUE
+FROM   V$MYSTAT   MY,
+       V$STATNAME  ST
+WHERE  MY.STATISTIC# =ST.STATISTIC#
+AND    ST.NAME = 'redo size';
+
+可以创建视图来同时查询当前会话REDO和UNDO的生成量，如下所示：
+CREATE OR REPLACE VIEW VW_REDO_UNDO_LHR AS
+SELECT (SELECT NB.VALUE
+          FROM V$MYSTAT NB, V$STATNAME ST
+         WHERE NB.STATISTIC# = ST.STATISTIC#
+           AND ST.NAME = 'redo size') REDO,
+       (SELECT NB.VALUE
+          FROM V$MYSTAT NB, V$STATNAME ST
+         WHERE NB.STATISTIC# = ST.STATISTIC#
+           AND ST.NAME = 'undo change vector size') UNDO
+  FROM DUAL;
+"
 }
 ]}]
