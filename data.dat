@@ -484,4 +484,54 @@ AND SAMPLE_TIME > SYSDATE - 1 / (24 * 60)
   WHERE RANK_ORDER <= 10
   ORDER BY COUNTS DESC;
 "}
+,
+{
+"title":"查找最近一分钟内，最消耗CPU的会话",
+"sql":"SELECT SESSION_ID,
+       COUNT(*)
+FROM   V$ACTIVE_SESSION_HISTORY V
+WHERE  V.SESSION_STATE = 'ON CPU'
+AND    V.SAMPLE_TIME > SYSDATE - 10/ (24 * 60)
+GROUP  BY SESSION_ID
+ORDER  BY COUNT(*) DESC;
+"},
+{
+"title":"查找最近一分钟内，最消耗I/O的SQL语句",
+"sql":"SELECT ASH.INST_ID,
+        ASH.SQL_ID,
+        (SELECT VS.SQL_TEXT
+           FROM GV$SQLAREA VS
+          WHERE VS.SQL_ID = ASH.SQL_ID
+            AND ASH.INST_ID = VS.INST_ID) SQL_TEXT,
+        ASH.SQL_CHILD_NUMBER,
+        ASH.SQL_OPNAME,
+        ASH.SESSION_INFO,
+        COUNTS,
+        PCTLOAD * 100 || '%' PCTLOAD
+   FROM (SELECT ASH.INST_ID,
+                ASH.SQL_ID,
+                ASH.SQL_CHILD_NUMBER,
+                ASH.SQL_OPNAME,
+                (ASH.MODULE || '--' || ASH.ACTION || '--' || ASH.PROGRAM || '--' ||
+                ASH.MACHINE || '--' || ASH.CLIENT_ID || '--' ||
+                ASH.SESSION_TYPE) SESSION_INFO,
+                COUNT(*) COUNTS,
+                ROUND(COUNT(*) / SUM(COUNT(*)) OVER(), 2) PCTLOAD,
+                DENSE_RANK() OVER(ORDER BY COUNT(*) DESC) RANK_ORDER
+           FROM GV$ACTIVE_SESSION_HISTORY ASH
+          WHERE ASH.SESSION_TYPE <> 'BACKGROUND'
+            AND ASH.SESSION_STATE = 'WAITING'
+            AND ASH.SAMPLE_TIME > SYSDATE - 1 / (24 * 60)
+            AND ASH.WAIT_CLASS = 'USER I/O'
+          GROUP BY ASH.INST_ID,
+                   ASH.SQL_ID,
+                   ASH.SQL_CHILD_NUMBER,
+                   ASH.SQL_OPNAME,
+                   (ASH.MODULE || '--' || ASH.ACTION || '--' || ASH.PROGRAM || '--' ||
+                   ASH.MACHINE || '--' || ASH.CLIENT_ID || '--' ||
+                   ASH.SESSION_TYPE)) ASH
+  WHERE RANK_ORDER <= 10
+  ORDER BY COUNTS DESC;
+"
+}
 ]}]
