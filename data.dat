@@ -642,5 +642,40 @@ SELECT INST_ID,
  WHERE RANK_ORDER <= 10
  ORDER BY INST_ID, A.ELAPSED_TIME DESC;
 "
+},
+{
+"title":"数据块，重做日志块及控制文件数据块的大小分别是多少",
+"sql":"这3种数据块分别介绍如下：
+①　数据块（Data Block），是读写数据文件的最小单位，默认是8KB，可以通过SQL语句“SELECT FILE#,NAME,BLOCK_SIZE FROM V$DATAFILE;”查询，单位为BYTE。
+②　重做日志数据块（Redo Block），大小一般等于操作系统的系统块的大小，一般为512或4096，可以通过SQL语句“SELECT BLOCKSIZE FROM V$LOG;”或“SELECT LEBSZ FROM X$KCCLE;”查询，单位为BYTE。
+③　控制文件数据块（Control File Block），默认为16KB，可以通过SQL语句“SELECT BLOCK_SIZE FROM V$CONTROLFILE;”查询，单位为BYTE。
+SQL> col name for a50
+SQL> select file#,name,block_size from v$datafile;
+     FILE# NAME                                               BLOCK_SIZE
+---------- -------------------------------------------------- ----------
+         1 /u02/app/oracle/oradata/oratest/system01.dbf             8192
+         2 /u02/app/oracle/oradata/oratest/sysaux01.dbf             8192
+         3 /u02/app/oracle/oradata/oratest/undotbs01.dbf            8192
+         4 /u02/app/oracle/oradata/oratest/users01.dbf              8192
+         5 /u02/app/oracle/oradata/oratest/example01.dbf            8192
+         6 /u02/app/oracle/oradata/oratest/users02.dbf              8192
+         7 /u02/app/oracle/oradata/oratest/ts_ogg01.dbf             8192
+         8 /u02/app/oracle/oradata/oratest/users03.dbf              8192 
+
+8 rows selected.
+ 
+SQL> select lebsz from x$kccle;
+     LEBSZ
+----------
+       512
+       512
+       512
+
+SQL> select block_size from v$controlfile;
+BLOCK_SIZE
+----------
+     16384
+     16384
+"
 }
 ]}]
