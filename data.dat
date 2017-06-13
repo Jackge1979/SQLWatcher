@@ -358,7 +358,7 @@ SQL>
 },
 {
 "title":"如何查询数据库系统或当前会话的REDO和UNDO的生成量",
-"sql","反映UNDO、REDO生成量的统计指标分别是：
+"sql":"反映UNDO、REDO生成量的统计指标分别是：
 REDO：redo size
 UNDO：undo change vector size
 1、查询数据库系统REDO生成量，可以通过V$SYSSTAT视图查询，如下所示：
