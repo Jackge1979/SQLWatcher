@@ -78,4 +78,39 @@ SELECT A.THREAD# THREAD#,
          WHERE T.FIRST_TIME <= SYSDATE) A
  GROUP BY A.F_TIME, A.THREAD#
  ORDER BY 1, 2 DESC;
-"}]}]
+"},
+{
+"title":"查询ASM磁盘的使用情况",
+"sql":"SELECT A.GROUP_NUMBER,
+       A.DISK_NUMBER,
+       A.NAME,
+       A.PATH,
+       A.STATE,
+       A.MOUNT_STATUS,
+       A.TOTAL_MB,
+       A.FREE_MB,
+       A.CREATE_DATE,
+       A.MOUNT_DATE,
+       A.LIBRARY,
+       A.OS_MB
+  FROM V$ASM_DISK A
+  ORDER BY  A.GROUP_NUMBER,
+       A.DISK_NUMBER;
+"
+},
+{
+"title":"查询ASM磁盘组的使用情况",
+"sql":"SELECT DI.GROUP_NUMBER,
+       DI.NAME,
+       DI.BLOCK_SIZE,
+       DI.STATE,
+       DI.TYPE,
+       DI.TOTAL_MB,
+       DI.FREE_MB,
+       DI.COMPATIBILITY,
+       DI.VOTING_FILES,
+       DI.OFFLINE_DISKS
+  FROM V$ASM_DISKGROUP DI
+ ORDER BY DI.GROUP_NUMBER;
+"
+}]}]
