@@ -328,7 +328,7 @@ Enter user-name:
 需要注意的是，当配置了TWO_TASK环境变量后，就无法使用操作系统验证来登录数据库了，会报ORA-01031: insufficient privileges的错误。
 
 类似地，在Windows环境下的变量是LOCAL，其设置方法和Linux下的TWO_TASK一致，如下所示：
-C:/Users/boc>sqlplus lhr/lhr
+C:\/Users\/boc>sqlplus lhr/lhr
 SQL*Plus: Release 11.2.0.1.0 Production on Mon Oct 31 16:28:25 2016
 Copyright (c) 1982, 2010, Oracle.  All rights reserved.
 ERROR:
