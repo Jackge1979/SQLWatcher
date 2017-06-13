@@ -184,4 +184,83 @@ SELECT A.NAME,
  WHERE A.TS# = B.TS#
  ORDER BY B.TS#, B.DATETIME;
 "
+},
+{
+"title":"如何跟踪expdp和SQL*Plus命令",
+"sql":"可以使用trace选项来跟踪expdp命令，如下所示：
+expdp \'/ AS SYSDBA\' directory=DATA_PUMP_DIR schemas=SCOTT dumpfile=test_query_lhr_scott_02.dmp parfile=/tmp/scottfile.par log=test_query_lhr_scott_02.log trace=4a0300
+
+若想跟踪exp命令的话，可以使用操作系统命令strace，如下所示：
+strace exp n1/n1 tables=scott.emp file=a.dmp
+
+strace -c -p 25805
+
+操作系统命令strace也可以跟踪SQL*Plus命令，跟踪的命令很简单：
+strace -o /tmp/output.txt -T -tt -e trace=all  sqlplus / as sysdba
+
+Unix系统下跟踪SQL*Plus命令使用truss命令，如下所示：
+truss -dfaie -o /tmp/sched_trace.out.02271 sqlplus '/as sysdba'
+"
+},
+{
+"title":"如何彻底停止expdp进程",
+"sql","许多同事在使用expdp命令时，不小心按了CTRL+C组合键,然后又输入exit命令（或者网络中断等异常现象），导致expdp进程不存在，但Oracle数据库的会话仍存在，所以dmp文件也一直在增长。在这种情况下的处理办法如下所示：
+1、检查expdp进程是否还在
+ps -ef | grep expdp
+若存在，则可用kill -9 process命令杀掉expdp的进程。
+
+2、检查会话是否仍存在，若存在则把相关的会话杀掉（注意：先使用命令“ALTER SYSTEM KILL SESSION”在数据库级别杀掉会话，然后在OS级别使用kill -9杀掉进程），如无杀会话的权限则可以将相关的表DROP掉，表名可以使用如下的SQL来查询：
+SELECT * FROM DBA_DATAPUMP_SESSIONS;
+SELECT * FROM DBA_DATAPUMP_JOBS;
+例如：
+SYS@orclasm > SELECT * FROM DBA_DATAPUMP_SESSIONS;
+
+OWNER_NAME JOB_NAME                     INST_ID SADDR            SESSION_TYPE
+---------- ------------------------- ---------- ---------------- --------------
+LHR        SYS_EXPORT_SCHEMA_04               1 00000000A8B71D98 MASTER
+LHR        SYS_EXPORT_SCHEMA_04               1 00000000AB98AFC8 WORKER
+
+SYS@orclasm > DROP TABLE LHR.SYS_EXPORT_SCHEMA_04 PURGE;
+Table dropped.
+
+SYS@orclasm >  SELECT * FROM DBA_DATAPUMP_SESSIONS;
+no rows selected
+
+SYS@orclasm > SELECT * FROM DBA_DATAPUMP_JOBS;
+no rows selected
+使用相同的办法也删除从视图DBA_DATAPUMP_JOBS中查询出来的表，直到2个视图无记录。
+
+3、删除导出的dmp文件。如不删除，则重新执行expdp命令时，会报dmp文件已存在。
+这里作者给出自己常用的一个SQL语句，可以查询expdp的相关会话的详细信息，如下所示：
+
+SET LINE 9999
+COL OWNER_NAME FOR A10
+COL JOB_NAME FOR A25
+COL OPERATION FOR A10
+COL JOB_MODE FOR A10
+COL STATE FOR A15
+COL OSUSER FOR A10
+COL "DEGREE|ATTACHED|DATAPUMP" FOR A25
+COL SESSION_INFO FOR A20  
+
+SELECT DS.INST_ID,
+       DJ.OWNER_NAME,
+       DJ.JOB_NAME,
+       TRIM(DJ.OPERATION) OPERATION,
+       TRIM(DJ.JOB_MODE) JOB_MODE,
+       DJ.STATE,
+       DJ.DEGREE || ',' || DJ.ATTACHED_SESSIONS || ',' ||DJ.DATAPUMP_SESSIONS "DEGREE|ATTACHED|DATAPUMP",
+       DS.SESSION_TYPE,
+       S.OSUSER ,
+       (SELECT S.SID || ',' || S.SERIAL# || ',' || P.SPID
+          FROM GV$PROCESS P
+         WHERE S.PADDR = P.ADDR
+           AND S.INST_ID = P.INST_ID) SESSION_INFO
+  FROM DBA_DATAPUMP_JOBS DJ --GV$DATAPUMP_JOB  
+  FULL OUTER JOIN DBA_DATAPUMP_SESSIONS DS --GV$DATAPUMP_SESSION
+    ON (DJ.JOB_NAME = DS.JOB_NAME AND DJ.OWNER_NAME = DS.OWNER_NAME)
+  LEFT OUTER JOIN GV$SESSION S
+    ON (S.SADDR = DS.SADDR AND DS.INST_ID = S.INST_ID)
+ ORDER BY DJ.OWNER_NAME, DJ.JOB_NAME;
+"
 }]}]
