@@ -594,5 +594,53 @@ ORDER  BY COUNT(*) DESC;
  WHERE ASH.SAMPLE_TIME > SYSDATE - 1 / (24 * 60)
  GROUP BY ASH.SESSION_ID, ASH.USER_ID, ASH.SESSION_SERIAL#, ASH.PROGRAM
  ORDER BY SUM(DECODE(ASH.SESSION_STATE, 'ON CPU', 1, 1));
-"}
+"},
+{
+"title":"如何查询逻辑读、物理读、执行次数和解析次数最多以及执行时间最长的SQL语句呢？如何寻找或监控效率低下的SQL语句？",
+"sql":"效率低下的SQL一般是执行时间较长的SQL语句，可以通过如下几种方式来监控分析：
+①　当前系统的SQL可以通过监控V$SQL_MONITOR、V$SESSION视图来实现，记录执行时间较长的SQL语句。对于历史SQL可以通过分析DBA_HIST_SQLSTAT视图。
+②　分析现有的系统中的执行计划，重点检查驱动表与被驱动表顺序、表连接算法、排序是否有索引、索引使用。
+③　分析AWR、ASH和ADDM。
+④　通过OEM中性能监控的捕获5s以上的SQL。
+⑤　通过GV$SQLAREA视图来分析。
+如下的SQL语句是查询执行时间最长的SQL语句，若要查询其它性能问题，可以将SQL中加粗的字段替换即可。逻辑读取BUFFER_GETS字段，物理读取DISK_READS字段，执行时间取ELAPSED_TIME字段，执行次数取EXECUTIONS字段，解析次数取PARSE_CALLS字段
+SELECT INST_ID,
+       USERNAME,
+       SQL_ID,
+       A.BUFFER_GETS BUFFER_GETS,
+       DISK_READS,
+       LAST_LOAD_TIME,
+       LAST_ACTIVE_TIME,
+       A.EXECUTIONS,
+       PARSE_CALLS,
+       VERSION_COUNT,
+       LOADS,
+       ((ELAPSED_TIME / 1000000)) ELAPSED_TIME,
+       ROUND(A.BUFFER_GETS / DECODE(A.EXECUTIONS, 0, 1, A.EXECUTIONS), 3) BUFFER_GETS_PER_EXEC,
+       ROUND(A.DISK_READS / DECODE(A.EXECUTIONS, 0, 1, A.EXECUTIONS), 3) DISK_READS_PER_EXEC,
+       (A.ELAPSED_TIME / 1000000 / DECODE(A.EXECUTIONS, 0, 1, A.EXECUTIONS)) ELAPSED_TIME_PER_EXEC,
+       CLIENT_INFO,
+       A.SQL_TEXT SQL_TEXT
+  FROM (SELECT AI.INST_ID,
+               AI.BUFFER_GETS,
+               AI.DISK_READS,
+               AI.EXECUTIONS,
+               AI.PARSE_CALLS,
+               AI.SQL_TEXT,
+               AI.PARSING_USER_ID,
+               AI.SQL_ID,
+               AI.ELAPSED_TIME,
+               AI.LAST_LOAD_TIME,
+               AI.LAST_ACTIVE_TIME,
+               PARSING_SCHEMA_NAME USERNAME,
+               VERSION_COUNT,
+               LOADS,
+               AI.MODULE || '--' || AI.ACTION CLIENT_INFO,
+               RANK() OVER(ORDER BY AI.ELAPSED_TIME DESC) RANK_ORDER
+          FROM GV$SQLAREA AI
+         WHERE BUFFER_GETS > 1000 ) A
+ WHERE RANK_ORDER <= 10
+ ORDER BY INST_ID, A.ELAPSED_TIME DESC;
+"
+}
 ]}]
