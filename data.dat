@@ -442,5 +442,46 @@ chown oracle:dba /dev/raw/raw2
 gc buffer busy acquire是当会话1尝试请求访问远程实例上的数据块，但是在会话1之前已经有相同实例上另外一个会话2请求访问了相同的数据块，并且没有完成，那么会话1等待gc buffer busy acquire。
 gc buffer busy release是在会话1之前已经有远程实例的会话2请求访问了相同的数据块，并且没有完成，那么会话1等待gc buffer busy release。
 "
-}
+},
+{
+"title":"RAC下如何在当前的实例下杀掉另外一个实例的会话",
+"sql":"在Oracle 11g中很好实现，只需要在命令“ALTER SYSTEM KILL SESSION 'SID,SERIAL#' IMMEDIATE;”中的SERIAL#后加上实例号即可，如果要杀掉实例2上的“71，20925”的会话，那么在任意一个节点上执行：“ALTER SYSTEM DISCONNECT SESSION '71,20925,@2' IMMEDIATE;”即可，但是Oracle 11g以下版本的RAC中就只能连接到相应的实例上才能杀掉当前实例的会话。其实，有一种折中的办法就是创建JOB，让该JOB可以在指定的实例上运行KILL SESSION的命令。"
+},
+{
+"title":"查找最近一分钟内，最消耗CPU的SQL语句",
+"sql":"SELECT ASH.INST_ID,
+        ASH.SQL_ID,
+        (SELECT VS.SQL_TEXT
+           FROM GV$SQLAREA VS
+          WHERE VS.SQL_ID = ASH.SQL_ID
+            AND ASH.INST_ID = VS.INST_ID) SQL_TEXT,
+        ASH.SQL_CHILD_NUMBER,
+        ASH.SQL_OPNAME,
+        ASH.SESSION_INFO,
+        COUNTS,
+        PCTLOAD * 100 || '%' PCTLOAD
+   FROM (SELECT ASH.INST_ID,
+                ASH.SQL_ID,
+                ASH.SQL_CHILD_NUMBER,
+                ASH.SQL_OPNAME,
+                (ASH.MODULE || '--' || ASH.ACTION || '--' || ASH.PROGRAM || '--' ||
+                ASH.MACHINE || '--' || ASH.CLIENT_ID || '--' ||
+                ASH.SESSION_TYPE) SESSION_INFO,
+                COUNT(*) COUNTS,
+                ROUND(COUNT(*) / SUM(COUNT(*)) OVER(), 2) PCTLOAD,
+                DENSE_RANK() OVER(ORDER BY COUNT(*) DESC) RANK_ORDER
+           FROM GV$ACTIVE_SESSION_HISTORY ASH
+           WHERE  ASH.SESSION_TYPE <> 'BACKGROUND'
+           AND ASH.SESSION_STATE = 'ON CPU'
+AND SAMPLE_TIME > SYSDATE - 1 / (24 * 60)
+          GROUP BY ASH.INST_ID,
+                   ASH.SQL_ID,
+                   ASH.SQL_CHILD_NUMBER,
+                   ASH.SQL_OPNAME,
+                   (ASH.MODULE || '--' || ASH.ACTION || '--' || ASH.PROGRAM || '--' ||
+                   ASH.MACHINE || '--' || ASH.CLIENT_ID || '--' ||
+                   ASH.SESSION_TYPE)) ASH
+  WHERE RANK_ORDER <= 10
+  ORDER BY COUNTS DESC;
+"}
 ]}]
