@@ -262,4 +262,26 @@ SELECT DS.INST_ID,
     ON (S.SADDR = DS.SADDR AND DS.INST_ID = S.INST_ID)
  ORDER BY DJ.OWNER_NAME, DJ.JOB_NAME;
 "
-}]}]
+},
+{
+"title":"RMAN可以跨版本恢复吗",
+"sql":"答案是可以跨版本恢复的，但是有很多限制条件。对于跨小版本的恢复很容易，例如从11.2.0.1恢复到11.2.0.3版本的数据库。可以依次还原SPFILE、控制文件和数据文件，然后恢复数据库，使用STARTUP UPGRADE命令打开数据库，最后一步是使用catupgrd.sql脚本对失效的对象进行编译即可。对于跨大版本的恢复有很多限制条件，例如从10.2.0.2恢复到11.2.0.3版本的数据库。恢复步骤和小版本一样，打开数据库的时候可以使用命令：“ALTER DATABASE OPEN RESETLOGS UPGRADE;”。将Oracle 10g恢复到Oracle 11g上，需要满足2个条件，①必须在Oracle 10g上先执行脚本“@?/rdbms/admin/utlu112i.sql”，然后再进行备份，否则RESTORE之后的升级将失败。②Oracle 10g的版本必须大于10.2.0.2，即Oracle采用RMAN恢复到高版本的数据库依然要遵循Oracle数据库的升级流程图"
+},
+{
+"title":"在UNDO表空间数据文件丢失的情况下如何恢复",
+"sql":"恢复大约可以分为3种情况：
+①有备份，这种情况下直接采用备份的文件进行恢复即可。
+②无备份但是有完整的归档文件存在，这种情况下可以使用命令“ALTER DATABASE CREATE DATAFILE 文件号 AS '/u03/app/oracle/oradata/ora1024g/undotbs01.dbf' size 50m;”来创建丢失的UNDO文件，然后使用“RECOVER DATAFILE 文件号;”进行恢复数据库文件即可。
+③无备份归档文件丢失，在这种情况下的恢复比较复杂。首先应该切换UNDO表空间到一个新建的UNDO表空间中，并设置原有表空间的管理模式为手动管理模式，然后将隐含参数“_OFFLINE_ROLLBACK_SEGMENTS”设置为TRUE，一些关键性的命令如下所示：
+ALTER SYSTEM SET UNDO_TABLESPACE=UNDOTBS2 SCOPE=SPFILE;
+ALTER SYSTEM SET UNDO_MANAGEMENT=MANUAL SCOPE=SPFILE;
+ALTER SYSTEM SET "_OFFLINE_ROLLBACK_SEGMENTS"=TRUE SCOPE=SPFILE;
+ALTER SYSTEM SET "_CORRUPTED_ROLLBACK_SEGMENTS"='_SYSSMU1$','_SYSSMU2$','_SYSSMU3$','_SYSSMU4$','_SYSSMU5$','_SYSSMU6$','_SYSSMU7$','_SYSSMU8$','_SYSSMU9$','_SYSSMU10$' SCOPE=SPFILE;
+CREATE UNDO TABLESPACE UNDOTBS1 DATAFILE '/U03/APP/ORACLE/ORADATA/ORA1024G/UNDOTBS01.DBF' SIZE 50M AUTOEXTEND ON;
+ALTER SYSTEM SET UNDO_TABLESPACE=UNDOTBS1  SCOPE=SPFILE;
+ALTER SYSTEM SET UNDO_MANAGEMENT=AUTO  SCOPE=SPFILE;
+ALTER SYSTEM RESET "_OFFLINE_ROLLBACK_SEGMENTS" SCOPE=SPFILE SID='*';
+ALTER SYSTEM RESET "_CORRUPTED_ROLLBACK_SEGMENTS" SCOPE=SPFILE SID='*';
+"
+}
+]}]
