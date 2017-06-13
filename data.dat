@@ -387,5 +387,60 @@ SELECT (SELECT NB.VALUE
            AND ST.NAME = 'undo change vector size') UNDO
   FROM DUAL;
 "
+},
+{
+"title":"如何找出当前有多少个用户登录到数据库",
+"sql":"有多种方式可以查询，其中，一种方式是查询V$SESSION视图，SQL命令为：“SELECT COUNT(1) FROM V$SESSION  A”，另一种方式是查询V$SYSSTAT视图，SQL命令为：“SELECT * FROM  V$SYSSTAT A WHERE A.NAME='logons current'”。如果是UNIX系统的话，那么还可以通过命令“ps -ef|grep oracle|wc -l”来查询用户数量。"
+},
+{
+"title":"sqlnet.ora文件的作用是什么",
+"sql":"sqlnet.ora文件的作用类似于Linux系统的nsswitch.conf文件，通过该文件来决定如何查找一个连接中出现的连接字符串。
+例如，在客户端输入命令：sqlplus sys/oracle@orcl，而sqlnet.ora的配置如下所示：
+SQLNET.AUTHENTICATION_SERVICES= (NTS)
+
+NAMES.DIRECTORY_PATH= (TNSNAMES,HOSTNAME)
+那么，客户端就会首先在tnsnames.ora文件中查找orcl的记录。若没有相应的记录则尝试把orcl当作一个主机名，通过网络的途径去解析它的IP地址，然后去连接这个IP上GLOBAL_DBNAME=orcl实例。
+如果sqlnet.ora文件的配置如下所示：
+NAMES.DIRECTORY_PATH= (TNSNAMES)
+那么客户端就只会从tnsnames.ora查找orcl的记录。
+"
+},
+{
+"title":"创建ASM磁盘的方式有哪几种",
+"sql":"可以通过ASMLIB、udev及Faking的方式来创建ASM磁盘。其中，Faking的方式不需要额外添加磁盘，可以在现有文件系统上分配一些空间用于ASM磁盘，过程如下所示：
+mkdir  -p  /oracle/asmdisk
+dd if=/dev/zero of=/oracle/asmdisk/disk1 bs=1024k count=1000
+dd if=/dev/zero of=/oracle/asmdisk/disk2 bs=1024k count=1000
+
+/sbin/losetup /dev/loop1 /oracle/asmdisk/disk1
+/sbin/losetup /dev/loop2 /oracle/asmdisk/disk2
+
+raw /dev/raw/raw1 /dev/loop1
+raw /dev/raw/raw2 /dev/loop2
+
+chmod 660 /dev/raw/raw1
+chmod 660 /dev/raw/raw2
+chown oracle:dba /dev/raw/raw1
+chown oracle:dba /dev/raw/raw2
+
+将以下内容添加到文件/etc/rc.local文件中：
+/sbin/losetup /dev/loop1 /oracle/asmdisk/disk1
+/sbin/losetup /dev/loop2 /oracle/asmdisk/disk2
+
+raw /dev/raw/raw1 /dev/loop1
+raw /dev/raw/raw2 /dev/loop2
+
+chmod 660 /dev/raw/raw1
+chmod 660 /dev/raw/raw2
+chown oracle:dba /dev/raw/raw1
+chown oracle:dba /dev/raw/raw2 
+"}
+,
+{
+"title":"RAC等待事件gc buffer busy acquire和gc buffer busy release的区别是什么",
+"sql":"gc buffer busy是RAC数据库中常见的等待事件，从Oracle 11g开始gc buffer busy分为gc buffer busy acquire和gc buffer busy release。
+gc buffer busy acquire是当会话1尝试请求访问远程实例上的数据块，但是在会话1之前已经有相同实例上另外一个会话2请求访问了相同的数据块，并且没有完成，那么会话1等待gc buffer busy acquire。
+gc buffer busy release是在会话1之前已经有远程实例的会话2请求访问了相同的数据块，并且没有完成，那么会话1等待gc buffer busy release。
+"
 }
 ]}]
