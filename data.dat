@@ -1,4 +1,6 @@
-﻿[{"type":"Oracle","data":[{"title":"查询RMAN的所有备份信息","sql":"SELECT A.RECID BS_KEY,
+﻿[{"type":"Oracle","data":[
+{"title":"查询RMAN的所有备份信息",
+"sql":"SELECT A.RECID BS_KEY,
        C.RECID BP_KEY,
        CASE
          WHEN A.BACKUP_TYPE = 'L' THEN
@@ -59,4 +61,21 @@
   LEFT OUTER JOIN V$BACKUP_CONTROLFILE_DETAILS F
     ON (F.BTYPE_KEY = A.RECID)
  ORDER BY A.RECID, A.RECID, B.FILE#, D.THREAD#, D.SEQUENCE#;
-"}]}]
+"},
+"title":"查询归档日志的生成情况",
+"sql":"通过视图GV$ARCHIVED_LOG可以查询到日志的生成情况，如下所示：
+SELECT A.THREAD# THREAD#,
+       A.F_TIME F_TIME,
+       ROUND(SUM(A.BLOCKS * A.BLOCK_SIZE) / 1024 / 1024) 每天归档日志量_M,
+       ROUND(SUM(A.BLOCKS * A.BLOCK_SIZE) / 1024 / 1024 / 24, 2) 每小时平均归档日志量_M,
+       COUNT(1)  归档文件数
+  FROM (SELECT DISTINCT SEQUENCE#,
+                        THREAD#,
+                        BLOCKS,
+                        BLOCK_SIZE,
+                        TO_CHAR(FIRST_TIME, 'yyyy-mm-dd') F_TIME
+          FROM GV$ARCHIVED_LOG T
+         WHERE T.FIRST_TIME <= SYSDATE) A
+ GROUP BY A.F_TIME, A.THREAD#
+ ORDER BY 1, 2 DESC;
+"]}]
