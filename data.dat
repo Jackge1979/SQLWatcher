@@ -584,12 +584,12 @@ ORDER  BY COUNT(*) DESC;
        SUM(DECODE(ASH.SESSION_STATE,
                   'WAITING',
                   DECODE(ASH.WAIT_CLASS, 'USER I/O', 1, 0),
-                  0)) "WAITING",
+                  0)) \"WAITING\",
        SUM(DECODE(ASH.SESSION_STATE,
                   'WAITING',
                   DECODE(ASH.WAIT_CLASS, 'USER I/O', 1, 0),
-                  0)) "IO",
-       SUM(DECODE(ASH.SESSION_STATE, 'ON CPU', 1, 1)) "TOTAL"
+                  0)) \"IO\",
+       SUM(DECODE(ASH.SESSION_STATE, 'ON CPU', 1, 1)) \"TOTAL\"
   FROM V$ACTIVE_SESSION_HISTORY ASH
  WHERE ASH.SAMPLE_TIME > SYSDATE - 1 / (24 * 60)
  GROUP BY ASH.SESSION_ID, ASH.USER_ID, ASH.SESSION_SERIAL#, ASH.PROGRAM
