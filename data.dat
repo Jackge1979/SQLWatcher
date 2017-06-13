@@ -677,5 +677,26 @@ BLOCK_SIZE
      16384
      16384
 "
+},
+{
+"title":"COUNT(1)比COUNT(*)在执行效率上要快吗？",
+"sql":"错。COUNT(1)和COUNT(*)在执行效率上是一样的。COUNT()函数是Oracle中的聚合函数，用于统计结果集的行数。其语法形式如下所示：
+COUNT({ * | [ DISTINCT | ALL ] expr }) [ OVER (analytic_clause) ]
+可以把COUNT的使用情况分为以下3类：
+①　COUNT(1)、COUNT(*)、COUNT(常量)、COUNT(主键)、COUNT(ROWID)、COUNT(非空列)
+②　COUNT(允许为空列)
+③　COUNT(DISTINCT 列名)
+
+下面分别从查询结果和效率方面做个比较：
+（一）结果区别
+①　COUNT(1)、COUNT(*)、COUNT(ROWID)、COUNT(常量)、COUNT(主键)、COUNT(非空列)这几种方式统计的行数是表中所有存在的行的总数，包括值为NULL的行和非空行。所以，这几种方式的执行结果相同。这里的常量可以为数字或字符串，例如，COUNT(2)、COUNT(333)、COUNT('x')、COUNT('xiaomaimiao')。需要注意的是：这里的COUNT(1)中的“1”并不表示表中的第一列，它其实是一个表达式，可以换成任意数字或字符或表达式。
+②　COUNT(允许为空列) 这种方式统计的行数不会包括字段值为NULL的行。
+③　COUNT(DISTINCT 列名) 得到的结果是除去值为NULL和重复数据后的结果。
+④　“SELECT COUNT(''),COUNT(NULL) FROM T_COUNT_LHR;”返回0行。
+（二）效率、索引
+①　如果存在主键或非空列上的索引，那么COUNT(1)、COUNT(*)、COUNT(ROWID)、COUNT(常量)、COUNT(主键)、COUNT(非空列)会首先选择主键上的索引快速全扫描（INDEX FAST FULL SCAN）。若主键不存在则会选择非空列上的索引。若非空列上没有索引则肯定走全表扫描（TABLE ACCESS FULL）。其中，COUNT(ROWID)在走索引的时候比其它几种方式要慢。通过10053事件可以看到这几种方式除了COUNT(ROWID)之外，其它最终都会转换成COUNT(*)的方式来执行。
+②　对于COUNT(COL1)来说，只要列字段上有索引则会选择索引快速全扫描（INDEX FAST FULL SCAN）。而对于“SELECT COL1”来说，除非列上有NOT NULL约束，否则执行计划会选择全表扫描。
+③　COUNT(DISTINCT 列名) 若列上有索引，且有非空约束或在WHERE子句中使用IS NOT NULL，则会选择索引快速全扫描。其余情况选择全表扫描。
+"
 }
 ]}]
