@@ -204,7 +204,7 @@ truss -dfaie -o /tmp/sched_trace.out.02271 sqlplus '/as sysdba'
 },
 {
 "title":"如何彻底停止expdp进程",
-"sql","许多同事在使用expdp命令时，不小心按了CTRL+C组合键,然后又输入exit命令（或者网络中断等异常现象），导致expdp进程不存在，但Oracle数据库的会话仍存在，所以dmp文件也一直在增长。在这种情况下的处理办法如下所示：
+"sql":"许多同事在使用expdp命令时，不小心按了CTRL+C组合键,然后又输入exit命令（或者网络中断等异常现象），导致expdp进程不存在，但Oracle数据库的会话仍存在，所以dmp文件也一直在增长。在这种情况下的处理办法如下所示：
 1、检查expdp进程是否还在
 ps -ef | grep expdp
 若存在，则可用kill -9 process命令杀掉expdp的进程。
