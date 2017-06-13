@@ -214,7 +214,6 @@ SELECT * FROM DBA_DATAPUMP_SESSIONS;
 SELECT * FROM DBA_DATAPUMP_JOBS;
 例如：
 SYS@orclasm > SELECT * FROM DBA_DATAPUMP_SESSIONS;
-
 OWNER_NAME JOB_NAME                     INST_ID SADDR            SESSION_TYPE
 ---------- ------------------------- ---------- ---------------- --------------
 LHR        SYS_EXPORT_SCHEMA_04               1 00000000A8B71D98 MASTER
